@@ -55,5 +55,30 @@ try {
     if ($_.Exception.Response) { $status = $_.Exception.Response.StatusCode.value__ }
     Write-Output "  HTTP $status : this token cannot list invoices."
 }
+$accountId = Read-Host 'Optional: paste your 32-character account ID to probe the Registrar domains endpoint (Enter to skip)'
+if ($accountId -match '^[a-fA-F0-9]{32}$') {
+    Write-Output 'Checking GET /accounts/{id}/registrar/domains ...'
+    try {
+        $dom = Invoke-RestMethod -Uri "https://api.cloudflare.com/client/v4/accounts/$accountId/registrar/domains" -Headers $headers -Method Get
+        if ($dom.success) {
+            $list = @($dom.result)
+            Write-Output ("  readable. {0} domain records listed." -f $list.Count)
+            if ($list.Count -gt 0) {
+                $first = $list[0]
+                $dnames = @($first | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)
+                Write-Output ("  fields on a domain record: {0}" -f ($dnames -join ', '))
+                foreach ($f in 'expires_at', 'auto_renew', 'current_registrar', 'locked') {
+                    if ($dnames -contains $f) { Write-Output "  $f : present" } else { Write-Output "  $f : absent" }
+                }
+            }
+        } else { Write-Output '  API answered but success=false.' }
+    } catch {
+        $status = 'unknown'
+        if ($_.Exception.Response) { $status = $_.Exception.Response.StatusCode.value__ }
+        Write-Output "  HTTP $status : this token cannot list registrar domains."
+    }
+} else {
+    Write-Output 'Registrar probe skipped.'
+}
 $headers = $null
 Write-Output 'Done. Nothing above is secret; it is safe to share this output.'
