@@ -1,0 +1,43 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/card"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+    android:padding="14dp" android:background="@drawable/widget_bg">
+    <LinearLayout android:id="@+id/title_row" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:id="@+id/title" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:text="CLOUDFLARE" android:textSize="11sp" android:letterSpacing="0.16" android:textColor="#FFBA7A" android:textStyle="bold" />
+        <TextView android:id="@+id/refresh" android:layout_width="48dp" android:layout_height="32dp" android:gravity="center"
+            android:text="↻" android:textSize="24sp" android:textColor="#FFBA7A" android:contentDescription="Refresh usage" />
+    </LinearLayout>
+    <TextView android:id="@+id/total" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Connect account" android:textColor="#EFF5EE" android:textSize="30sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/subtitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Usage charges · this billing cycle" android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+    <LinearLayout android:id="@+id/request_row" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
+        <TextView android:id="@+id/request_label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" />
+        <ProgressBar android:id="@+id/request_bar" style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="8dp" android:layout_marginStart="8dp"
+            android:progressTint="#FFBA7A" android:progressBackgroundTint="#39483E" />
+        <TextView android:id="@+id/request_value" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="1" android:layout_marginStart="8dp" android:gravity="end" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/cpu_row" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
+        <TextView android:id="@+id/cpu_label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" />
+        <ProgressBar android:id="@+id/cpu_bar" style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="8dp" android:layout_marginStart="8dp"
+            android:progressTint="#FFBA7A" android:progressBackgroundTint="#39483E" />
+        <TextView android:id="@+id/cpu_value" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="1" android:layout_marginStart="8dp" android:gravity="end" />
+    </LinearLayout>
+    <TextView android:id="@+id/metrics" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="6dp" android:text="Tap to set up your widget" android:textColor="#EFF5EE" android:textSize="11sp"
+        android:lineSpacingExtra="2dp" android:maxLines="2" android:ellipsize="end" />
+    <TextView android:id="@+id/extra" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:visibility="gone" />
+    <TextView android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+    <TextView android:id="@+id/freshness" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="6dp" android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" />
+</LinearLayout>

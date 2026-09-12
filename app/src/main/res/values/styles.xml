@@ -1,0 +1,11 @@
+<resources>
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#FFBA7A</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">#111916</item>
+        <item name="android:colorControlNormal">#ADBBB2</item>
+    </style>
+    <string name="widget_description">Your Cloudflare usage charges and compute at a glance.</string>
+</resources>

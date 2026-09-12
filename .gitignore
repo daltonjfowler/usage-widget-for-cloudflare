@@ -1,0 +1,9 @@
+.tools/
+.gradle/
+local.properties
+**/build/
+private/
+*.keystore
+*.jks
+releases/*.zip
+.serena/
