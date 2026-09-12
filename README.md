@@ -2,6 +2,24 @@
 
 A small, free Android home-screen widget for Cloudflare account usage. Built for a Pixel 7 running GrapheneOS. Android 12 or newer; no Google Play services, hosted backend, advertising, or telemetry.
 
+## Screenshots
+
+<p>
+<img src="docs/device-pixel7.png" width="300" alt="The widget on a Pixel 7 at three rows: usage charges, request and CPU meters, family breakdown, allowance left, pace and next bill">
+<img src="docs/demo-xl-276x338.png" width="276" alt="Extra-large card rendered with labeled demo data">
+</p>
+
+Left: the widget on a Pixel 7 running GrapheneOS, sized to three rows. Right: the same extra-large card rendered by the test suite with demo data. Smaller sizes, all demo data:
+
+<p>
+<img src="docs/demo-strip-250x51.png" width="250" alt="One-line strip: total and request percent"><br>
+<img src="docs/demo-wide-250x51.png" width="250" alt="Wide strip: total, request and CPU percent"><br>
+<img src="docs/demo-medium-250x102.png" width="250" alt="Compact card: total, request and CPU meters, data date"><br>
+<img src="docs/demo-large-276x220.png" width="276" alt="Full card: title, total, meters, family breakdown, footer">
+</p>
+
+<img src="docs/icon.png" width="64" alt="App icon: a fuel pump with a price display and a raincloud"> App icon.
+
 ## Install
 
 A prebuilt APK is included at `releases/UsageWidget.apk`. It is a personal build signed with the author's own key and has only been tested on a Pixel 7 running GrapheneOS. It may not work on other devices or launchers. Check its SHA-256 against `releases/SHA256SUMS.txt` before installing, or build it yourself from source (see below).
