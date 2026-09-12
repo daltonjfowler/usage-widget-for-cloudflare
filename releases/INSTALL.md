@@ -9,7 +9,7 @@ If an earlier build of this app is installed under a different package id, unins
 4. For real usage, use the app's **Open Cloudflare API tokens** button. Create a custom token with **Account > Billing > Read**, restricted to your account.
 5. Paste that token into the app. Paste your own account ID, which appears in your Cloudflare dashboard URL. Confirm the Workers Paid checkbox and tap **Save and connect**.
 
-The same Billing Read token already covers subscriptions; no new permission is required.
+The same Billing Read token already covers subscriptions; no new permission is required. Cloudflare describes Billing Read as read access to the billing profile, subscriptions, invoices and entitlements. On the author account on 2026-09-12 the profile returned name, billing email, postal address and account type, and no card fields. Give the token an expiry date and revoke it in Cloudflare if the phone is lost; scripts/check-billing-token.ps1 in the repository shows what your own token exposes without printing values.
 
 The existing desktop Wrangler login was checked, but it does not have Billing Read permission. This is the only missing account-connection step. Do not use the global API key.
 

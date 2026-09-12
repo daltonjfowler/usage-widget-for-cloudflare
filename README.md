@@ -41,6 +41,8 @@ Paste your own 32-character account ID, which appears in your Cloudflare dashboa
 
 Enter the token only in the app. It is encrypted with AES-GCM using an Android Keystore key and excluded from Android backups. Disconnect removes local credentials and the snapshot; revoking the token itself is done in Cloudflare.
 
+What a Billing Read token can read: Cloudflare describes it as read access to the billing profile, subscriptions, invoices and entitlements. The app itself only calls the billable usage and subscriptions endpoints. Anyone who obtained the token could also read the billing profile. On the author's account on 2026-09-12 that profile returned name, billing email, postal address and account type, and no card number, expiry, phone or VAT fields; invoice access was not tested. Cloudflare may return more fields on other accounts. Give the token an expiry date when you create it, revoke it in Cloudflare if the phone is lost, and run `scripts/check-billing-token.ps1` on a PC to see exactly what your own token exposes (it prints field names and whether a card number is masked, never values).
+
 ## What it shows
 
 - Current-cycle usage charges, grouped by currency rather than summing different currencies.
