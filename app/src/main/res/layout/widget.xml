@@ -4,40 +4,77 @@
     <LinearLayout android:id="@+id/title_row" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:gravity="center_vertical">
         <TextView android:id="@+id/title" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-            android:text="CLOUDFLARE" android:textSize="11sp" android:letterSpacing="0.16" android:textColor="#FFBA7A" android:textStyle="bold" />
-        <TextView android:id="@+id/refresh" android:layout_width="48dp" android:layout_height="32dp" android:gravity="center"
-            android:text="↻" android:textSize="24sp" android:textColor="#FFBA7A" android:contentDescription="Refresh usage" />
+            android:text="CLOUDFLARE" android:textSize="10sp" android:letterSpacing="0.18" android:textColor="#FFBA7A" android:textStyle="bold" />
+        <TextView android:id="@+id/refresh" android:layout_width="44dp" android:layout_height="32dp" android:gravity="center"
+            android:text="↻" android:textSize="20sp" android:textColor="#FFBA7A" android:contentDescription="Refresh usage" />
     </LinearLayout>
     <TextView android:id="@+id/total" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="Connect account" android:textColor="#EFF5EE" android:textSize="30sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        android:text="Connect account" android:textColor="#EFF5EE" android:textSize="30sp" android:textStyle="bold"
+        android:includeFontPadding="false" android:letterSpacing="-0.02" android:maxLines="1" android:ellipsize="end" />
     <TextView android:id="@+id/subtitle" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="Usage charges · this billing cycle" android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+        android:layout_marginTop="2dp" android:text="Usage charges · this billing cycle" android:textColor="#9FADA5" android:textSize="11sp"
+        android:maxLines="1" android:ellipsize="end" />
     <LinearLayout android:id="@+id/request_row" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
+        android:layout_marginTop="3dp" android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
         <TextView android:id="@+id/request_label" android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" />
         <ProgressBar android:id="@+id/request_bar" style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="0dp" android:layout_weight="1" android:layout_height="8dp" android:layout_marginStart="8dp"
-            android:progressTint="#FFBA7A" android:progressBackgroundTint="#39483E" />
+            android:progressTint="#FFBA7A" android:progressBackgroundTint="#2A3730" />
         <TextView android:id="@+id/request_value" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="1" android:layout_marginStart="8dp" android:gravity="end" />
+            android:textColor="#9FADA5" android:textSize="11sp" android:maxLines="1" android:layout_marginStart="8dp" android:gravity="end" />
     </LinearLayout>
     <LinearLayout android:id="@+id/cpu_row" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
+        android:layout_marginTop="2dp" android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
         <TextView android:id="@+id/cpu_label" android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" />
         <ProgressBar android:id="@+id/cpu_bar" style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="0dp" android:layout_weight="1" android:layout_height="8dp" android:layout_marginStart="8dp"
-            android:progressTint="#FFBA7A" android:progressBackgroundTint="#39483E" />
+            android:progressTint="#FFBA7A" android:progressBackgroundTint="#2A3730" />
         <TextView android:id="@+id/cpu_value" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="1" android:layout_marginStart="8dp" android:gravity="end" />
+            android:textColor="#9FADA5" android:textSize="11sp" android:maxLines="1" android:layout_marginStart="8dp" android:gravity="end" />
     </LinearLayout>
     <TextView android:id="@+id/metrics" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginTop="6dp" android:text="Tap to set up your widget" android:textColor="#EFF5EE" android:textSize="11sp"
         android:lineSpacingExtra="2dp" android:maxLines="2" android:ellipsize="end" />
+    <LinearLayout android:id="@+id/families" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="6dp" android:orientation="vertical" android:visibility="gone">
+        <LinearLayout android:id="@+id/fam_row_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="1dp" android:visibility="gone">
+            <TextView android:id="@+id/fam_name_0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#D5DED8" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/fam_amt_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" android:gravity="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/fam_row_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="1dp" android:visibility="gone">
+            <TextView android:id="@+id/fam_name_1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#D5DED8" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/fam_amt_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" android:gravity="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/fam_row_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="1dp" android:visibility="gone">
+            <TextView android:id="@+id/fam_name_2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#D5DED8" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/fam_amt_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" android:gravity="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/fam_row_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="1dp" android:visibility="gone">
+            <TextView android:id="@+id/fam_name_3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#D5DED8" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/fam_amt_3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" android:gravity="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/fam_row_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="1dp" android:visibility="gone">
+            <TextView android:id="@+id/fam_name_4" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#D5DED8" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/fam_amt_4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" android:gravity="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/fam_row_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="1dp" android:visibility="gone">
+            <TextView android:id="@+id/fam_name_5" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#D5DED8" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/fam_amt_5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" android:gravity="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/fam_row_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="1dp" android:visibility="gone">
+            <TextView android:id="@+id/fam_name_6" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#D5DED8" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/fam_amt_6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" android:gravity="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/fam_row_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="1dp" android:visibility="gone">
+            <TextView android:id="@+id/fam_name_7" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="#D5DED8" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/fam_amt_7" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#EFF5EE" android:textSize="11sp" android:maxLines="1" android:gravity="end" />
+        </LinearLayout>
+    </LinearLayout>
     <TextView android:id="@+id/extra" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:visibility="gone" />
+        android:textColor="#9FADA5" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:visibility="gone" />
     <TextView android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
     <TextView android:id="@+id/freshness" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="6dp" android:textColor="#ADBBB2" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" />
+        android:layout_marginTop="6dp" android:textColor="#8E9B94" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" />
 </LinearLayout>

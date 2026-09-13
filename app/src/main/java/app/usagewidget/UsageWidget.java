@@ -3,6 +3,7 @@ package app.usagewidget;
 import android.app.PendingIntent;
 import android.appwidget.*;
 import android.content.*;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.SizeF;
 import android.util.TypedValue;
@@ -14,6 +15,12 @@ import java.util.*;
 
 public final class UsageWidget extends AppWidgetProvider {
     private static final String REFRESH="app.usagewidget.REFRESH";
+    /** Family breakdown rows: name left, amount right-aligned. One row per line familyLines() can return at XL. */
+    private static final int[] FAM_ROW ={R.id.fam_row_0,R.id.fam_row_1,R.id.fam_row_2,R.id.fam_row_3,R.id.fam_row_4,R.id.fam_row_5,R.id.fam_row_6,R.id.fam_row_7};
+    private static final int[] FAM_NAME={R.id.fam_name_0,R.id.fam_name_1,R.id.fam_name_2,R.id.fam_name_3,R.id.fam_name_4,R.id.fam_name_5,R.id.fam_name_6,R.id.fam_name_7};
+    private static final int[] FAM_AMT ={R.id.fam_amt_0,R.id.fam_amt_1,R.id.fam_amt_2,R.id.fam_amt_3,R.id.fam_amt_4,R.id.fam_amt_5,R.id.fam_amt_6,R.id.fam_amt_7};
+    private static final int BAR_WARM=0xFFFFBA7A, BAR_HOT=0xFFFF7E6B;   // bar turns hot at 80% of the allowance
+    private static final int AMOUNT=0xFFEFF5EE, AMOUNT_ZERO=0xFF7F8B85; // zero amounts recede
 
     enum Variant { STRIP, WIDE, MEDIUM, LARGE, TALL, XL }
 
@@ -175,9 +182,9 @@ public final class UsageWidget extends AppWidgetProvider {
         float totalSp; int metricsMax, freshMax;
         switch(v) {
             case MEDIUM: rv.setViewPadding(R.id.card,px(c,10),px(c,8), px(c,10),px(c,8));  totalSp=20; metricsMax=2; freshMax=1; break;
-            case LARGE:  rv.setViewPadding(R.id.card,px(c,12),px(c,12),px(c,12),px(c,12)); totalSp=22; metricsMax=2; freshMax=2; break;
+            case LARGE:  rv.setViewPadding(R.id.card,px(c,12),px(c,10),px(c,12),px(c,10)); totalSp=22; metricsMax=2; freshMax=2; break;
             case XL:     rv.setViewPadding(R.id.card,px(c,14),px(c,14),px(c,14),px(c,14)); totalSp=28; metricsMax=8; freshMax=2; break;
-            default:     rv.setViewPadding(R.id.card,px(c,12),px(c,10),px(c,12),px(c,10)); totalSp=24; metricsMax=2; freshMax=2; break; // TALL
+            default:     rv.setViewPadding(R.id.card,px(c,12),px(c,8), px(c,12),px(c,8));  totalSp=24; metricsMax=2; freshMax=2; break; // TALL
         }
         rv.setTextViewTextSize(R.id.total,TypedValue.COMPLEX_UNIT_SP,totalSp);
         rv.setInt(R.id.freshness,"setMaxLines",freshMax);
@@ -190,6 +197,19 @@ public final class UsageWidget extends AppWidgetProvider {
         rv.setViewVisibility(R.id.request_row,View.GONE);
         rv.setViewVisibility(R.id.cpu_row,View.GONE);
         rv.setViewVisibility(R.id.extra,View.GONE);
+        rv.setViewVisibility(R.id.families,View.GONE);
+        if(xl) {
+            // XL has vertical room to spare, so the groups breathe. Tighter variants keep the layout defaults.
+            rv.setViewLayoutMargin(R.id.request_row,RemoteViews.MARGIN_TOP,8,TypedValue.COMPLEX_UNIT_DIP);
+            rv.setViewLayoutMargin(R.id.cpu_row,RemoteViews.MARGIN_TOP,4,TypedValue.COMPLEX_UNIT_DIP);
+            rv.setViewLayoutMargin(R.id.extra,RemoteViews.MARGIN_TOP,8,TypedValue.COMPLEX_UNIT_DIP);
+        }
+        if(v==Variant.LARGE || tall) {
+            // LARGE (2-line live footer) and TALL sit within a few dp of their keys, so the group margins are dropped.
+            rv.setViewLayoutMargin(R.id.subtitle,RemoteViews.MARGIN_TOP,0,TypedValue.COMPLEX_UNIT_DIP);
+            rv.setViewLayoutMargin(R.id.request_row,RemoteViews.MARGIN_TOP,0,TypedValue.COMPLEX_UNIT_DIP);
+            rv.setViewLayoutMargin(R.id.cpu_row,RemoteViews.MARGIN_TOP,0,TypedValue.COMPLEX_UNIT_DIP);
+        }
 
         if(!s.configured() && !s.demo()) {
             rv.setTextViewText(R.id.total,"Connect account");
@@ -225,7 +245,8 @@ public final class UsageWidget extends AppWidgetProvider {
                     rv.setTextViewText(R.id.metrics,"Workers requests not identified · open app for row names");
                 } else {
                     List<String> fam=b.familyLines(metricsMax);
-                    rv.setTextViewText(R.id.metrics,fam.isEmpty()?"No metered usage returned":String.join("\n",fam));
+                    if(fam.isEmpty()) rv.setTextViewText(R.id.metrics,"No metered usage returned");
+                    else { rv.setViewVisibility(R.id.metrics,View.GONE); showFamilies(rv,fam); }
                 }
             }
             Subscriptions subs=null;
@@ -338,12 +359,36 @@ public final class UsageWidget extends AppWidgetProvider {
             // Value text shows the count AND the percent; the bar still encodes the percent.
             rv.setViewVisibility(bar,View.VISIBLE);
             rv.setTextViewText(value,Billing.compact(m.consumed)+(cpu?" ms":"")+" · "+Billing.percentText(m.consumed,included));
-            rv.setProgressBar(bar,1000,progress(m.consumed,included),false);
+            int p=progress(m.consumed,included);
+            rv.setProgressBar(bar,1000,p,false);
+            rv.setColorStateList(bar,"setProgressTintList",ColorStateList.valueOf(p>=800?BAR_HOT:BAR_WARM));
         } else {
             rv.setViewVisibility(bar,View.GONE);
             rv.setTextViewText(value,Billing.compact(m.consumed)+(cpu?" ms":""));
         }
         rv.setContentDescription(bar,name+": "+Billing.compact(m.consumed)+" of "+Billing.compact(included)+(cpu?" ms":" requests")+" included");
+    }
+
+    /** Family lines as a two-column ledger: name left, amount right-aligned, zero amounts dimmed. */
+    private static void showFamilies(RemoteViews rv,List<String> lines) {
+        rv.setViewVisibility(R.id.families,View.VISIBLE);
+        for(int i=0;i<FAM_ROW.length;i++) {
+            if(i>=lines.size()) { rv.setViewVisibility(FAM_ROW[i],View.GONE); continue; }
+            String[] parts=splitFamily(lines.get(i));
+            rv.setViewVisibility(FAM_ROW[i],View.VISIBLE);
+            rv.setTextViewText(FAM_NAME[i],parts[0]);
+            rv.setTextViewText(FAM_AMT[i],parts[1]);
+            rv.setTextColor(FAM_AMT[i],parts[1].matches(".*[1-9].*")?AMOUNT:AMOUNT_ZERO);
+        }
+    }
+
+    /** familyLines() joins a name and its amount with two spaces; the overflow line uses " · ". */
+    static String[] splitFamily(String line) {
+        int i=line.lastIndexOf("  ");
+        if(i>=0) return new String[]{line.substring(0,i),line.substring(i+2)};
+        i=line.indexOf(" · ");
+        if(i>=0) return new String[]{line.substring(0,i),line.substring(i+3)};
+        return new String[]{line,""};
     }
 
     private static int progress(BigDecimal consumed,BigDecimal included) {

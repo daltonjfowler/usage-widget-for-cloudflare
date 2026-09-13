@@ -70,7 +70,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
 
 The script builds the APK, runs billing tests and Android behavior tests, runs Android lint, then copies the APK to `releases/`. The policy override applies only to that process.
 
-The release passed 101 tests, including Android 12/15 widget/activity tests and native widget rendering at the supported sizes. Android lint reported no errors. The APK signature was verified. The signed release APK is 87732 bytes, SHA-256 `258be5b542fd8b7b0a4e5b80a2bb5de3cf4f48ac29c18672126422b09d02d489` (recorded in `releases/SHA256SUMS.txt`). Live account totals and physical GrapheneOS installation still require the on-device setup above.
+The release passed 101 tests, including Android 12/15 widget/activity tests and native widget rendering at the supported sizes. Android lint reported no errors. The APK signature was verified. The signed release APK is 91196 bytes, SHA-256 `50fbcf2cd4c09b3fdf3deb242e51916f5613b70646091b2cc8f4dd370ad5bfb2` (recorded in `releases/SHA256SUMS.txt`). Live account totals and physical GrapheneOS installation still require the on-device setup above.
 
 For another machine, install JDK 17 and Android SDK 35 with build-tools 35.0.0, set `JAVA_HOME` and `ANDROID_HOME`, then use `gradlew.bat` or `./gradlew`:
 
