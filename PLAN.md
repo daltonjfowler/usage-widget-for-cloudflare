@@ -16,6 +16,7 @@ Free Android home-screen widget for account-wide Cloudflare usage charges and Wo
 - Home-screen widget, demo, details, manual and three-hour background refresh.
 - Cached data and clear offline/stale/permission-denied states.
 - Build script and billing/Android regression tests.
+- Restyle (version 1.1): gradient card with a softer stroke, the family breakdown as a two-column ledger (names left, amounts right-aligned, zero amounts dimmed), meter bars that turn hot at 80% of the allowance, a tighter total, and extra group spacing on XL only. LARGE and TALL drop the group margins in code because their live two-line footer sits within a few dp of the 180x200 and 180x256 keys. Known limit, pre-existing: at the narrow 180dp TALL key the "Left:" line wraps and the next-bill line ellipsizes; a real three-row Pixel cell is 276dp wide and shows all three. The docs and releases PNGs were re-exported from the Robolectric renders; docs/device-pixel7.png predates the restyle.
 
 ## Validation
 
