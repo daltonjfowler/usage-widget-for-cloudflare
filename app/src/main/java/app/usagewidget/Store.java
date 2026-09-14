@@ -13,8 +13,13 @@ import javax.crypto.spec.GCMParameterSpec;
 
 final class Store {
     private static final String KEY="usagewidget-token";
+    static final String DEFAULT_UPDATE_URL="https://usagewidget-updates.daltonjfowler.workers.dev";
     final SharedPreferences prefs;
     Store(Context context) { prefs=context.getSharedPreferences("usagewidget",Context.MODE_PRIVATE); }
+    String updateUrl() { String u=prefs.getString("update_url",""); return u.isEmpty()?DEFAULT_UPDATE_URL:u; }
+    void setUpdateUrl(String url) { prefs.edit().putString("update_url",url==null?"":url.trim()).apply(); }
+    int lastUpdateNotifiedCode() { return prefs.getInt("last_update_notified_code",0); }
+    void setLastUpdateNotifiedCode(int code) { prefs.edit().putInt("last_update_notified_code",code).apply(); }
     String account() { return prefs.getString("account",""); }
     boolean configured() { return !account().isEmpty() && prefs.contains("token"); }
     boolean demo() { return prefs.getBoolean("demo",false); }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_status">Updates</string>
+    <string name="settings_updates">UPDATES</string>
+    <string name="update_you_have">You have %1$s (%2$d)</string>
+    <string name="update_check">Check for update</string>
+    <string name="update_checking">Checking for an update</string>
+    <string name="update_latest">You have the latest.</string>
+    <string name="update_available">%1$s (%2$d) is available, %3$s, %4$s</string>
+    <string name="update_available_no_notes">%1$s (%2$d) is available, %3$s</string>
+    <string name="update_button">Update</string>
+    <string name="update_downloading">Downloading %1$d%%</string>
+    <string name="update_installing">Starting the installer</string>
+    <string name="update_source_label">Update source URL</string>
+    <string name="update_source_hint">https://usagewidget-updates.daltonjfowler.workers.dev</string>
+    <string name="update_notif_title">Usage Widget %1$s (%2$d) is available. Tap to update.</string>
+    <string name="update_no_connection">No connection. If this app\'s Network permission is off in GrapheneOS, turn it on to update.</string>
+    <string name="update_bad_shape">The update information could not be read.</string>
+    <string name="update_checksum_mismatch">The download did not match its checksum. Nothing was installed.</string>
+    <string name="update_signature_mismatch">The update was not signed with this app\'s key. Nothing was installed.</string>
+    <string name="update_needs_permission">This app needs permission to install updates. Turn on Allow from this source, then tap Update again.</string>
+</resources>

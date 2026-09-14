@@ -21,7 +21,26 @@ public final class RefreshJob extends JobService {
             .setBackoffCriteria(30*60*1000L,JobInfo.BACKOFF_POLICY_EXPONENTIAL).build());
     }
     public static void cancel(Context c) { c.getSystemService(JobScheduler.class).cancelAll(); }
+    public static final int UPDATE_CHECK=303;
+    /** The daily update check. A persisted periodic job on any network, every 24 hours
+     *  with a 4-hour flex. It only checks and, for a genuinely newer version, posts one
+     *  notification; nothing downloads or installs automatically. Idempotent. */
+    public static void scheduleUpdateCheck(Context c) {
+        JobScheduler scheduler=c.getSystemService(JobScheduler.class);
+        if(scheduler==null) return;
+        scheduler.schedule(new JobInfo.Builder(UPDATE_CHECK,new ComponentName(c,RefreshJob.class))
+            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setPersisted(true)
+            .setPeriodic(24*60*60*1000L,4*60*60*1000L).build());
+    }
     @Override public boolean onStartJob(JobParameters p) {
+        if(p.getJobId()==UPDATE_CHECK) {
+            FutureTask<Void> task=new FutureTask<>(()->{
+                Updater.checkAndNotify(getApplicationContext(),BuildConfig.VERSION_CODE);
+                if(tasks.remove(p)!=null) jobFinished(p,false);
+                return null;
+            });
+            tasks.put(p,task); Repository.IO.execute(task); return true;
+        }
         FutureTask<Void> task=new FutureTask<>(()->{
             boolean ok=Repository.refresh(getApplicationContext());
             if(tasks.remove(p)!=null) jobFinished(p,!ok);

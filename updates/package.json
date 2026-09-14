@@ -1,0 +1,12 @@
+{
+  "name": "usagewidget-updates",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Static host for Usage Widget in-app updates: latest.json and the signed APK, served from a Cloudflare Worker with static assets.",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.127.1"
+  }
+}

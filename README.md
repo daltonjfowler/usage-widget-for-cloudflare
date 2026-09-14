@@ -86,6 +86,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Install
 
 The installable APK is a signed release build, with debugging disabled. The Windows build script creates and reuses a personal signing key in `private/`. Preserve that folder for seamless updates; an APK signed with a different key requires uninstalling the old app. No account secrets are embedded in the APK. The portable Gradle command above builds a separate debug-signed development APK.
 
+### In-app updates
+
+The app can update itself from a self-hosted `latest.json` plus the signed APK on a Cloudflare Worker with static assets (`usagewidget-updates.daltonjfowler.workers.dev`), so a phone with no Play Store still gets updates. The app verifies each download by SHA-256 and by a signer-certificate match against the running app, then installs through the platform `PackageInstaller` only after a tap. A daily check notifies once per version code; nothing downloads or installs automatically. The update check is a plain GET with no query string and no device id, and the Worker keeps no logs. The update source URL is editable in the app.
+
+To publish a new build, from the repo root after a green `scripts/build.ps1`:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\publish.ps1 -Notes "In-app updates"
+```
+
+`publish.ps1` fails unless `releases/SHA256SUMS.txt` matches `releases/UsageWidget.apk`, copies the APK into `updates/public/`, reads `versionCode` and `versionName` from `app/build.gradle`, writes `updates/public/latest.json` (version code, version name, uppercase SHA-256, size, apk name, notes), then runs `wrangler deploy` inside `updates/`. Pass `-NoDeploy` to stage `latest.json` without touching Cloudflare. Run `cd updates; npm install` once to get the local `wrangler` CLI, and log it in before the first deploy. See `docs/checklist-updates.md`.
+
 ## Source map
 
 - `Billing.java`: API parsing, decimal costs, metric aggregation and display formatting.
@@ -93,7 +105,8 @@ The installable APK is a signed release build, with debugging disabled. The Wind
 - `Store.java`: local preferences and Keystore-backed encryption.
 - `UsageWidget.java`, `res/layout/widget.xml`: home-screen widget.
 - `MainActivity.java`: connection, demo, usage details and widget pinning.
-- `RefreshJob.java`, `BootReceiver.java`: Android background scheduling.
+- `RefreshJob.java`, `BootReceiver.java`: Android background scheduling and the daily update check.
+- `Updater.java`, `UpdateReceiver.java`, `Notifications.java`, `updates/`, `scripts/publish.ps1`: self-hosted in-app updates.
 - `app/src/test/`: billing regressions and Android widget/activity tests.
 - `PLAN.md`: implementation and handoff status.
 

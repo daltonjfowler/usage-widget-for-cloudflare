@@ -14,14 +14,28 @@ import android.widget.*;
 import java.math.BigDecimal;
 
 public final class MainActivity extends Activity {
+    /** Update-notification tap sets this so onCreate scrolls to the Updates card. */
+    public static final String EXTRA_SHOW_UPDATES="app.usagewidget.SHOW_UPDATES";
     private final int ink=Color.rgb(239,245,238), muted=Color.rgb(173,187,178), orange=Color.rgb(255,186,122);
     private LinearLayout page;
     private TextView feedback;
     private EditText account,token;
     private CheckBox paid;
     private boolean busy;
+    private ScrollView scrollRoot;
+    private LinearLayout updatesCard;
+    private TextView updateStatus;
+    private Button updateButton;
+    private EditText updateUrlInput;
+    private Updater.Info pendingUpdate;
 
-    @Override public void onCreate(Bundle state) { super.onCreate(state); render(); }
+    @Override public void onCreate(Bundle state) {
+        super.onCreate(state);
+        Notifications.createChannels(this);
+        RefreshJob.scheduleUpdateCheck(this);
+        render();
+        maybeScrollToUpdates();
+    }
     private int dp(float n) { return Math.round(n*getResources().getDisplayMetrics().density); }
     private GradientDrawable background(int color,int radius) {
         GradientDrawable d=new GradientDrawable(); d.setColor(color); d.setCornerRadius(dp(radius)); return d;
@@ -43,7 +57,7 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         Store s=new Store(this);
-        ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true); scroll.setBackgroundColor(Color.rgb(17,25,22));
+        ScrollView scroll=new ScrollView(this); scrollRoot=scroll; scroll.setFillViewport(true); scroll.setBackgroundColor(Color.rgb(17,25,22));
         page=new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL); page.setPadding(dp(24),dp(20),dp(24),dp(32)); scroll.addView(page);
         scroll.setOnApplyWindowInsetsListener((v,insets)->{
             android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.ime());
@@ -159,9 +173,91 @@ public final class MainActivity extends Activity {
                 .setMessage("Remove the saved token and usage snapshot from this device?")
                 .setNegativeButton("Cancel",null).setPositiveButton("Disconnect",(d,w)->disconnect()).show());
         }
+        buildUpdates();
         text(page,"Long-press the widget to resize it. It adapts from a one-line strip to a full card.",12,muted);
         text(page,"Updates about every 3 hours, when Android allows. On GrapheneOS, allow Network access for this app. Tap the widget to see details.",12,muted);
         text(page,"Independent tool. Not affiliated with or endorsed by Cloudflare, Inc.",11,muted);
+    }
+    // ---- in-app updates ------------------------------------------------------
+    private void buildUpdates() {
+        pendingUpdate=null;
+        LinearLayout box=card(); updatesCard=box;
+        text(box,getString(R.string.settings_updates),11,orange).setLetterSpacing(.1f);
+        updateStatus=text(box,getString(R.string.update_you_have,BuildConfig.VERSION_NAME,BuildConfig.VERSION_CODE),13,muted);
+        button(box,getString(R.string.update_check),this::checkForUpdate);
+        updateButton=button(box,getString(R.string.update_button),this::startUpdate);
+        updateButton.setVisibility(View.GONE);
+        text(box,getString(R.string.update_source_label),13,muted);
+        updateUrlInput=new EditText(this); updateUrlInput.setSingleLine(true); updateUrlInput.setTextColor(ink); updateUrlInput.setTextSize(13);
+        updateUrlInput.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);
+        updateUrlInput.setHint(R.string.update_source_hint); updateUrlInput.setHintTextColor(muted);
+        updateUrlInput.setText(new Store(this).updateUrl());
+        box.addView(updateUrlInput,new LinearLayout.LayoutParams(-1,dp(52)));
+    }
+    private void checkForUpdate() {
+        pendingUpdate=null; updateButton.setVisibility(View.GONE);
+        final String url=updateUrlInput.getText().toString().trim();
+        updateStatus.setText(getString(R.string.update_checking)); busy=true;
+        Repository.IO.execute(()->{
+            if(!url.isEmpty()) new Store(this).setUpdateUrl(url);
+            final String base=new Store(this).updateUrl();
+            final Updater.CheckResult r=Updater.check(BuildConfig.VERSION_CODE,base,new Updater.HttpSource());
+            runOnUiThread(()->{ busy=false; if(isDestroyed()) return; renderCheck(r); });
+        });
+    }
+    private void renderCheck(Updater.CheckResult r) {
+        switch(r.status) {
+            case AVAILABLE:
+                pendingUpdate=r.info; String size=Updater.formatSize(r.info.size);
+                if(r.info.notes==null || r.info.notes.isEmpty())
+                    updateStatus.setText(getString(R.string.update_available_no_notes,r.info.versionName,r.info.versionCode,size));
+                else updateStatus.setText(getString(R.string.update_available,r.info.versionName,r.info.versionCode,size,r.info.notes));
+                updateButton.setEnabled(true); updateButton.setVisibility(View.VISIBLE); break;
+            case UP_TO_DATE: updateStatus.setText(R.string.update_latest); break;
+            case NO_NETWORK: updateStatus.setText(R.string.update_no_connection); break;
+            default: updateStatus.setText(R.string.update_bad_shape); break;
+        }
+    }
+    private void startUpdate() {
+        if(pendingUpdate==null) return;
+        // GrapheneOS gates installs from other apps; send the user to turn it on first.
+        if(!Updater.canInstall(this)) { updateStatus.setText(R.string.update_needs_permission); openUnknownSources(); return; }
+        final Updater.Info info=pendingUpdate; final String base=new Store(this).updateUrl();
+        busy=true; updateButton.setEnabled(false); updateStatus.setText(getString(R.string.update_downloading,0));
+        Repository.IO.execute(()->{
+            final Updater.DownloadResult dr=Updater.download(getApplicationContext(),base,info,new Updater.HttpSource(),
+                pct->runOnUiThread(()->{ if(!isDestroyed()) updateStatus.setText(getString(R.string.update_downloading,pct)); }));
+            runOnUiThread(()->{ if(isDestroyed()) return; onDownloadDone(dr); });
+        });
+    }
+    private void onDownloadDone(Updater.DownloadResult dr) {
+        switch(dr.status) {
+            case DONE:
+                updateStatus.setText(R.string.update_installing);
+                final java.io.File file=dr.file;
+                Repository.IO.execute(()->{
+                    try { Updater.install(getApplicationContext(),file); busy=false; }
+                    catch(Exception e) { runOnUiThread(()->{ busy=false; if(isDestroyed()) return; updateStatus.setText(R.string.update_bad_shape); updateButton.setEnabled(true); }); }
+                });
+                break;
+            case NO_NETWORK: busy=false; updateStatus.setText(R.string.update_no_connection); updateButton.setEnabled(true); break;
+            case CHECKSUM_MISMATCH: busy=false; updateStatus.setText(R.string.update_checksum_mismatch); updateButton.setEnabled(true); break;
+            default: busy=false; updateStatus.setText(R.string.update_signature_mismatch); updateButton.setEnabled(true); break;
+        }
+    }
+    private void openUnknownSources() {
+        try { startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:"+getPackageName()))); }
+        catch(RuntimeException ignored) { }
+    }
+    private void maybeScrollToUpdates() {
+        if(!getIntent().getBooleanExtra(EXTRA_SHOW_UPDATES,false)) return;
+        final ScrollView scroll=scrollRoot; final LinearLayout target=updatesCard;
+        if(scroll==null || target==null) return;
+        scroll.post(()->{
+            int y=0; View v=target;
+            while(v!=null && v!=scroll) { y+=v.getTop(); ViewParent pnt=v.getParent(); v=(pnt instanceof View)?(View)pnt:null; }
+            scroll.smoothScrollTo(0,y);
+        });
     }
     private void renderMeter(LinearLayout parent,String title,Billing.WorkersMeter m,BigDecimal included,String unit,boolean paid,Billing b) {
         text(parent,title,14,ink);
