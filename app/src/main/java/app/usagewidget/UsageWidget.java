@@ -229,7 +229,7 @@ public final class UsageWidget extends AppWidgetProvider {
             boolean demo=s.demo(), paid=s.paid();
             rv.setTextViewText(R.id.total,b.total());
             if(!medium) {
-                rv.setTextViewText(R.id.title,demo?"USAGE WIDGET · DEMO":"USAGE WIDGET");
+                rv.setTextViewText(R.id.title,demo?"CLOUDFLARE USAGE · DEMO":"CLOUDFLARE USAGE");
                 String subtitle=b.cycles.size()==1
                     ? "Usage charges · since "+Billing.date(java.time.LocalDate.parse(b.cycles.first()))
                     : "Usage charges · "+b.period().toLowerCase(Locale.ROOT);
