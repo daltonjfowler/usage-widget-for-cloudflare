@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usage Widget for Cloudflare</title>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --ink:#f2efe9; --muted:#9aa0aa; --line:#272b34; --accent:#f6821f; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif; line-height:1.5;
+         min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { width:100%; max-width:420px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:28px 24px; }
+  h1 { font-size:1.35rem; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:.95rem; margin:0 0 20px; }
+  .ver { display:flex; align-items:baseline; gap:10px; padding:14px 16px; background:#12151b; border:1px solid var(--line); border-radius:12px; margin-bottom:8px; }
+  .ver b { font-size:1.1rem; }
+  .ver span { color:var(--muted); font-size:.85rem; }
+  .notes { color:var(--muted); font-size:.85rem; margin:0 0 18px; padding-left:2px; }
+  a.btn { display:block; text-align:center; text-decoration:none; background:var(--accent); color:#1a1206; font-weight:700;
+          padding:14px 16px; border-radius:12px; font-size:1rem; }
+  a.btn:active { opacity:.85; }
+  .hint { color:var(--muted); font-size:.82rem; margin:16px 0 0; }
+  code { background:#12151b; padding:1px 6px; border-radius:5px; font-size:.82rem; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1>Usage Widget for Cloudflare</h1>
+    <p class="sub">Android home-screen widget for your Cloudflare usage. Personal build, signed by the author.</p>
+    <div class="ver">
+      <b id="ver">Latest build</b>
+      <span id="size"></span>
+    </div>
+    <p class="notes" id="notes">Loading the current version.</p>
+    <a class="btn" id="dl" href="UsageWidget.apk" download>Download the APK</a>
+    <p class="hint">Open this on the phone, tap Download, then open the file to install. Same signing key as before, so it updates over the old app with no uninstall. After you install once, the app checks here for updates on its own.</p>
+  </main>
+  <script>
+    fetch("latest.json", { cache: "no-store" }).then(r => r.json()).then(d => {
+      document.getElementById("ver").textContent = "Version " + d.version_name + " (" + d.version_code + ")";
+      if (d.size) document.getElementById("size").textContent = Math.round(d.size / 1024) + " KB";
+      document.getElementById("notes").textContent = d.notes || "";
+      if (d.apk) document.getElementById("dl").setAttribute("href", d.apk);
+    }).catch(() => {
+      document.getElementById("notes").textContent = "Could not read the version list. The download link still works.";
+    });
+  </script>
+</body>
+</html>

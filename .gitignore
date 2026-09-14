@@ -11,3 +11,4 @@ releases/*.zip
 updates/node_modules/
 updates/public/*
 !updates/public/.gitkeep
+!updates/public/index.html
