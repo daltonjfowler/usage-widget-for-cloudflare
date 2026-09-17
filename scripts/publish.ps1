@@ -35,6 +35,24 @@ $versionCode = [int]$Matches[1]
 if ($gradle -notmatch "versionName\s+'([^']+)'") { throw 'Could not read versionName from app/build.gradle.' }
 $versionName = $Matches[1]
 
+# Safety gate: the APK's internal versionCode must equal build.gradle and it must carry the
+# published signing certificate. This blocks the worst mistake -- staging an old APK under a
+# new version label, which would loop the updater forever and ship no new code.
+& "$PSScriptRoot/verify-apk.ps1" -Apk $apk
+if ($LASTEXITCODE -ne 0) { throw 'APK failed verification; not publishing.' }
+
+# No downgrade or accidental re-publish: the new versionCode must exceed what the Worker serves.
+try {
+    $live = Invoke-RestMethod -Uri 'https://usagewidget-updates.daltonjfowler.workers.dev/latest.json' -Headers @{ 'Cache-Control' = 'no-cache' } -TimeoutSec 15
+    if ([int]$live.version_code -ge $versionCode) {
+        throw "Live latest.json already at version_code $($live.version_code); refusing to publish $versionCode. Bump versionCode in app/build.gradle first."
+    }
+    Write-Output "Live version_code $($live.version_code) -> publishing $versionCode."
+} catch {
+    if ($_.Exception.Message -like 'Live latest.json*') { throw }
+    Write-Warning "Could not read live latest.json ($($_.Exception.Message)); skipping the downgrade check."
+}
+
 $size = (Get-Item -LiteralPath $apk).Length
 
 # Stage the APK into the public asset folder (never committed).
@@ -56,7 +74,15 @@ if ($NoDeploy) {
 
 Push-Location $updatesDir
 try {
-    & npx wrangler deploy
-    if ($LASTEXITCODE -ne 0) { throw 'wrangler deploy failed.' }
+    # Run wrangler through cmd so its stderr chatter does not abort under Windows PowerShell 5.1.
+    $deployLog = Join-Path $repoRoot '.tools/wrangler-deploy.log'
+    cmd /c "npx --yes wrangler deploy > `"$deployLog`" 2>&1"
+    if ($LASTEXITCODE -ne 0) { Get-Content -LiteralPath $deployLog -Tail 30; throw 'wrangler deploy failed (is wrangler logged in? run: npx wrangler login).' }
+    Get-Content -LiteralPath $deployLog -Tail 6
 } finally { Pop-Location }
-Write-Output 'Deployed. Confirm https://usagewidget-updates.daltonjfowler.workers.dev/latest.json shows this version_code.'
+# Confirm the live endpoint actually serves the new version before declaring success.
+try {
+    $served = Invoke-RestMethod -Uri 'https://usagewidget-updates.daltonjfowler.workers.dev/latest.json' -Headers @{ 'Cache-Control' = 'no-cache' } -TimeoutSec 20
+    if ([int]$served.version_code -eq $versionCode) { Write-Output "Deployed and verified live: version_code $versionCode." }
+    else { Write-Warning "Deployed, but live latest.json still reads version_code $($served.version_code). Re-check in a moment." }
+} catch { Write-Warning "Deployed, but could not read live latest.json to confirm ($($_.Exception.Message))." }
