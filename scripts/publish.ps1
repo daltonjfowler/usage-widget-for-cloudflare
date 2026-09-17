@@ -80,9 +80,15 @@ try {
     if ($LASTEXITCODE -ne 0) { Get-Content -LiteralPath $deployLog -Tail 30; throw 'wrangler deploy failed (is wrangler logged in? run: npx wrangler login).' }
     Get-Content -LiteralPath $deployLog -Tail 6
 } finally { Pop-Location }
-# Confirm the live endpoint actually serves the new version before declaring success.
-try {
-    $served = Invoke-RestMethod -Uri 'https://usagewidget-updates.daltonjfowler.workers.dev/latest.json' -Headers @{ 'Cache-Control' = 'no-cache' } -TimeoutSec 20
-    if ([int]$served.version_code -eq $versionCode) { Write-Output "Deployed and verified live: version_code $versionCode." }
-    else { Write-Warning "Deployed, but live latest.json still reads version_code $($served.version_code). Re-check in a moment." }
-} catch { Write-Warning "Deployed, but could not read live latest.json to confirm ($($_.Exception.Message))." }
+# Confirm the live endpoint actually serves the new version. A deploy can take a few seconds to
+# propagate, so retry before warning.
+$confirmed = $false
+for ($i = 0; $i -lt 6 -and -not $confirmed; $i++) {
+    Start-Sleep -Seconds 4
+    try {
+        $served = Invoke-RestMethod -Uri 'https://usagewidget-updates.daltonjfowler.workers.dev/latest.json' -Headers @{ 'Cache-Control' = 'no-cache' } -TimeoutSec 20
+        if ([int]$served.version_code -eq $versionCode) { $confirmed = $true }
+    } catch { }
+}
+if ($confirmed) { Write-Output "Deployed and verified live: version_code $versionCode." }
+else { Write-Warning "Deployed, but live latest.json has not shown version_code $versionCode yet. Check https://usagewidget-updates.daltonjfowler.workers.dev/latest.json in a moment." }

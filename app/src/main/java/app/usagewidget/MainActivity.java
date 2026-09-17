@@ -34,6 +34,10 @@ public final class MainActivity extends Activity {
     private int weekMetric;   // 0 charges, 1 requests, 2 CPU; kept across re-renders
     private TextView widgetAlphaLabel;
     private Button[] accentSwatches;
+    private int tab;   // 0 Usage, 1 Settings; kept across re-renders
+    private java.util.List<View> usageViews, settingsViews;
+    private boolean buildingSettings;
+    private Button[] tabButtons;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -53,7 +57,9 @@ public final class MainActivity extends Activity {
     private LinearLayout card() {
         LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(20),dp(18),dp(20),dp(18));
         GradientDrawable bg=background(Color.rgb(23,35,29),24); bg.setStroke(dp(1),Color.rgb(57,72,62)); box.setBackground(bg);
-        LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(-1,-2); params.setMargins(0,dp(16),0,dp(8)); page.addView(box,params); return box;
+        LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(-1,-2); params.setMargins(0,dp(16),0,dp(8)); page.addView(box,params);
+        if(settingsViews!=null) (buildingSettings?settingsViews:usageViews).add(box);
+        return box;
     }
     private Button button(LinearLayout parent,String value,Runnable action) {
         Button b=new Button(this); b.setText(value); b.setAllCaps(false); b.setTextColor(ink); b.setTextSize(14);
@@ -73,6 +79,9 @@ public final class MainActivity extends Activity {
         text(page,"USAGE WIDGET FOR CLOUDFLARE",12,orange).setLetterSpacing(.18f);
         text(page,"A little peace\nof mind.",34,ink).setTypeface(null,Typeface.BOLD);
         text(page,"Your cloud usage, one glance away.",15,muted);
+        usageViews=new java.util.ArrayList<>(); settingsViews=new java.util.ArrayList<>(); buildingSettings=false;
+        boolean tabbed=s.configured()||s.demo();
+        if(tabbed) buildTabBar();
         LinearLayout overview=card();
         if(!s.raw().isEmpty()) {
             try {
@@ -139,19 +148,7 @@ public final class MainActivity extends Activity {
                     text(upcoming,"Usage "+word+" plus subscriptions renewing within 31 days. Excludes tax, credits, and zone plans, which need zone permissions.",12,muted);
                 }
                 if(subs!=null && subs.mentionsWorkersPaid()) text(upcoming,"Your account lists a Workers Paid subscription.",12,muted);
-                if(!b.metrics.isEmpty()) {
-                    LinearLayout details=card(); text(details,"THE BREAKDOWN",11,orange).setLetterSpacing(.12f);
-                    for(Billing.Metric metric:b.metrics) {
-                        text(details,metric.label(),15,ink).setTypeface(null,Typeface.BOLD);
-                        text(details,metric.quantity()+"\n"+Billing.money(metric.cost,metric.currency)+" usage charge",13,muted);
-                    }
-                    text(details,"Services appear exactly as Cloudflare reports them. Missing metrics are not treated as zero.",12,muted);
-                    button(details,"Copy row names",()->{
-                        android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-                        cm.setPrimaryClip(android.content.ClipData.newPlainText("Usage rows",String.join("\n",Billing.rowLabels(b))));
-                        Toast.makeText(this,"Row names copied",Toast.LENGTH_SHORT).show();
-                    });
-                }
+                if(!b.metrics.isEmpty()) buildBreakdown(b);
             } catch(Exception e) { text(overview,"Saved usage could not be read. Refresh or reconnect below.",15,orange); }
         } else {
             text(overview,"YOUR ACCOUNT, AT A GLANCE",11,orange);
@@ -159,6 +156,7 @@ public final class MainActivity extends Activity {
             text(overview,"See compute, requests, and usage charges directly from Cloudflare. Works without Google Play services.",14,muted);
             button(overview,"Try the demo widget",()->{s.prefs.edit().putBoolean("demo",true).apply(); UsageWidget.updateAll(this); render();});
         }
+        buildingSettings=true;
         LinearLayout setup=card(); text(setup,s.configured()?"ACCOUNT SETTINGS":"CONNECT CLOUDFLARE",11,orange).setLetterSpacing(.1f);
         text(setup,"Account ID",13,muted);
         account=new EditText(this); account.setSingleLine(true); account.setTextColor(ink); account.setTextSize(13);
@@ -184,11 +182,39 @@ public final class MainActivity extends Activity {
                 .setMessage("Remove the saved token and usage snapshot from this device?")
                 .setNegativeButton("Cancel",null).setPositiveButton("Disconnect",(d,w)->disconnect()).show());
         }
-        buildWidgetAppearance();
-        buildUpdates();
-        text(page,"Long-press the widget to resize it. It adapts from a one-line strip to a full card.",12,muted);
-        text(page,"Updates about every 3 hours, when Android allows. On GrapheneOS, allow Network access for this app. Tap the widget to see details.",12,muted);
-        text(page,"Independent tool. Not affiliated with or endorsed by Cloudflare, Inc.",11,muted);
+        if(tabbed) { buildWidgetAppearance(); buildUpdates(); }
+        buildAbout();
+        if(tabbed) applyTab();
+    }
+    // ---- tabs ----------------------------------------------------------------
+    /** Two-tab switch (Usage / Settings) so the page is not one long scroll once connected. */
+    private void buildTabBar() {
+        LinearLayout row=new LinearLayout(this); row.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2); rp.setMargins(0,dp(18),0,0); page.addView(row,rp);
+        String[] names={"Usage","Settings"}; tabButtons=new Button[2];
+        for(int i=0;i<2;i++) {
+            final int idx=i;
+            Button t=new Button(this); t.setText(names[i]); t.setAllCaps(false); t.setTextSize(14); t.setMinHeight(dp(44)); t.setMinWidth(0);
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,-2,1f); cp.rightMargin=(i<1)?dp(8):0;
+            t.setOnClickListener(v->{ tab=idx; applyTab(); if(scrollRoot!=null) scrollRoot.smoothScrollTo(0,0); });
+            row.addView(t,cp); tabButtons[i]=t;
+        }
+    }
+    private void applyTab() {
+        if(usageViews!=null) for(View v:usageViews) v.setVisibility(tab==0?View.VISIBLE:View.GONE);
+        if(settingsViews!=null) for(View v:settingsViews) v.setVisibility(tab==1?View.VISIBLE:View.GONE);
+        if(tabButtons!=null) for(int i=0;i<tabButtons.length;i++) {
+            boolean sel=i==tab;
+            tabButtons[i].setBackground(background(sel?Color.rgb(48,65,54):Color.rgb(28,42,35),14));
+            tabButtons[i].setTextColor(sel?ink:muted);
+        }
+    }
+    private void buildAbout() {
+        LinearLayout box=card();
+        text(box,"ABOUT",11,orange).setLetterSpacing(.1f);
+        text(box,"Long-press the widget to resize it. It adapts from a one-line strip to a full card.",12,muted);
+        text(box,"Updates about every 3 hours, when Android allows. On GrapheneOS, allow Network access for this app. Tap the widget to see details.",12,muted);
+        text(box,"Independent tool. Not affiliated with or endorsed by Cloudflare, Inc.",11,muted);
     }
     // ---- week view -----------------------------------------------------------
     /** A seven-day bar chart of daily usage, with a Charges/Requests/CPU toggle. History is local-only. */
@@ -241,6 +267,56 @@ public final class MainActivity extends Activity {
     private String formatValue(History.Week wk,java.math.BigDecimal v) {
         if(wk.money) return Billing.money(v,wk.unit);
         return Billing.compact(v)+(wk.unit.equals("ms")?" ms":"");
+    }
+    // ---- the breakdown -------------------------------------------------------
+    /** Collapsed by default. Shows only charged rows when opened; no-charge rows hide behind a sub-toggle. */
+    private void buildBreakdown(Billing b) {
+        LinearLayout details=card();
+        text(details,"THE BREAKDOWN",11,orange).setLetterSpacing(.12f);
+        java.util.List<Billing.Metric> charged=new java.util.ArrayList<>(), included=new java.util.ArrayList<>();
+        for(Billing.Metric m:b.metrics) { if(m.cost.signum()!=0) charged.add(m); else included.add(m); }
+        text(details,charged.size()+(charged.size()==1?" service with a charge":" services with charges")
+            +" · "+included.size()+" included at no charge",12,muted);
+
+        LinearLayout body=new LinearLayout(this); body.setOrientation(LinearLayout.VERTICAL); body.setVisibility(View.GONE);
+        final Button[] toggle=new Button[1];
+        toggle[0]=button(details,"Show breakdown",()->{
+            boolean show=body.getVisibility()!=View.VISIBLE;
+            body.setVisibility(show?View.VISIBLE:View.GONE);
+            toggle[0].setText(show?"Hide breakdown":"Show breakdown");
+        });
+        details.addView(body,new LinearLayout.LayoutParams(-1,-2));
+
+        if(charged.isEmpty()) text(body,"No usage charges this cycle. Everything is within the included allowances.",13,muted);
+        for(Billing.Metric m:charged) {
+            text(body,shortName(m),14,ink).setTypeface(null,Typeface.BOLD);
+            text(body,m.quantity()+" · "+Billing.money(m.cost,m.currency),13,muted);
+        }
+        if(!included.isEmpty()) {
+            LinearLayout inc=new LinearLayout(this); inc.setOrientation(LinearLayout.VERTICAL); inc.setVisibility(View.GONE);
+            final Button[] incToggle=new Button[1];
+            incToggle[0]=button(body,"Show "+included.size()+" included services",()->{
+                boolean show=inc.getVisibility()!=View.VISIBLE;
+                inc.setVisibility(show?View.VISIBLE:View.GONE);
+                incToggle[0].setText(show?"Hide included services":"Show "+included.size()+" included services");
+            });
+            body.addView(inc,new LinearLayout.LayoutParams(-1,-2));
+            for(Billing.Metric m:included) {
+                text(inc,shortName(m),13,muted);
+                text(inc,m.quantity()+" · "+Billing.money(m.cost,m.currency),12,muted);
+            }
+        }
+        text(body,"Names are shortened. Services appear as Cloudflare reports them; missing metrics are not treated as zero.",12,muted);
+        button(body,"Copy full row names",()->{
+            android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("Usage rows",String.join("\n",Billing.rowLabels(b))));
+            Toast.makeText(this,"Row names copied",Toast.LENGTH_SHORT).show();
+        });
+    }
+    /** Trim Cloudflare's long service name to the part before its "(First … included)" allowance note. */
+    private static String shortName(Billing.Metric m) {
+        String n=m.name; int p=n.indexOf(" (First ");
+        return p>0 ? n.substring(0,p) : n;
     }
     // ---- widget appearance ---------------------------------------------------
     /** Global widget styling: a background-transparency slider and accent swatches. Applies to every widget. */
@@ -362,6 +438,7 @@ public final class MainActivity extends Activity {
     }
     private void maybeScrollToUpdates() {
         if(!getIntent().getBooleanExtra(EXTRA_SHOW_UPDATES,false)) return;
+        tab=1; applyTab();   // Updates lives under Settings now
         final ScrollView scroll=scrollRoot; final LinearLayout target=updatesCard;
         if(scroll==null || target==null) return;
         scroll.post(()->{
@@ -432,7 +509,7 @@ public final class MainActivity extends Activity {
             String result=error;
             runOnUiThread(()->{ busy=false; if(isDestroyed()) return;
                 if(result!=null) { feedback.setText(result); feedback.setTextColor(orange); }
-                else { token.setText(""); RefreshJob.schedule(this); UsageWidget.updateAll(this); render(); fetchSubscriptionsAsync(); }
+                else { token.setText(""); tab=0; RefreshJob.schedule(this); UsageWidget.updateAll(this); render(); fetchSubscriptionsAsync(); }
             });
         });
     }
