@@ -144,7 +144,23 @@ public final class Billing {
         List<String> values=new ArrayList<>(); totals.forEach((c,a)->values.add(money(a,c)));
         return String.join(" + ",values);
     }
-    public String period() { return cycles.size()==1 ? "Cycle since "+cycles.first() : cycles.isEmpty() ? "Current billing period" : "Current subscription cycles"; }
+    public String period() {
+        LocalDate cur=currentCycleStart();
+        if (cur!=null) return "Cycle since "+cur;
+        return cycles.isEmpty() ? "Current billing period" : "Current subscription cycles";
+    }
+    /** Latest BillingPeriodStart among all metrics, or null when none carry cycle dates. */
+    public LocalDate currentCycleStart() {
+        LocalDate latest=null;
+        for (Metric m : metrics) if (m.cycleStart!=null && (latest==null || m.cycleStart.isAfter(latest))) latest=m.cycleStart;
+        return latest;
+    }
+    /** True when the response spans more than one billing cycle, so total() exceeds this cycle. */
+    public boolean multipleCycles() { return cycles.size()>1; }
+    /** All-cycles total across everything the response returned; the running figure that does not reset monthly. */
+    public String runningTotal() { return total(); }
+    /** Earliest cycle start in the response, for labeling the running total; null when none are dated. */
+    public LocalDate earliestCycle() { return cycles.isEmpty() ? null : LocalDate.parse(cycles.first()); }
     public String coverage() { return through==null ? "Coverage date unavailable" : "Latest data: "+through+" UTC"+(incomplete?" (partial dates)":""); }
     public boolean oldCoverage() { return through!=null && through.isBefore(LocalDate.now(ZoneOffset.UTC).minusDays(2)); }
 

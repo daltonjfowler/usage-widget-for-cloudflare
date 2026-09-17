@@ -45,7 +45,8 @@ What a Billing Read token can read: Cloudflare describes it as read access to th
 
 ## What it shows
 
-- Current-cycle usage charges, grouped by currency rather than summing different currencies.
+- Current-cycle usage charges, grouped by currency rather than summing different currencies. The headline resets each billing cycle; when Cloudflare returns more than one cycle, a running total across all returned cycles is shown on a separate line.
+- A seven-day "This week" bar chart in the app, with a Charges / Requests / CPU toggle. Each bar is one day's usage. Because the billing API returns only current-cycle totals, the history is built from daily samples the app records itself, on device only — it fills in one bar per day and never leaves the phone. Days with no snapshot stay blank, distinct from days of zero usage.
 - Every returned service in the breakdown, including Workers, Durable Objects, D1, and other metered services.
 - Workers Standard request and CPU amounts, identified by raw unit first and by the service name when Cloudflare sends no unit (the live rows are named "Workers Standard Requests (first 10M are included)" and "Workers CPU ms (first 30M are included)" with an empty unit), with static, asset, and cache rows excluded. Rows that Cloudflare groups under the "Workers & Pages" family are still recognized, while sibling products such as Pages Functions are not counted. Unidentified Workers rows are listed as diagnostics in the app, with a "Copy row names" button, never guessed to zero.
 - Selected Workers Paid allowances (10M requests and 30M CPU ms/month), with the $5 subscription shown separately. This is a user-selected plan, not an automatically detected subscription.
@@ -104,7 +105,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\publish.ps1 -Notes
 - `Repository.java`: fixed-origin HTTPS billing fetch, validation and cached snapshot updates.
 - `Store.java`: local preferences and Keystore-backed encryption.
 - `UsageWidget.java`, `res/layout/widget.xml`: home-screen widget.
-- `MainActivity.java`: connection, demo, usage details and widget pinning.
+- `MainActivity.java`: connection, demo, usage details, the weekly bar chart and widget pinning.
+- `History.java`, `BarChartView.java`: on-device daily usage samples and the seven-day chart that draws them.
 - `RefreshJob.java`, `BootReceiver.java`: Android background scheduling and the daily update check.
 - `Updater.java`, `UpdateReceiver.java`, `Notifications.java`, `updates/`, `scripts/publish.ps1`: self-hosted in-app updates.
 - `app/src/test/`: billing regressions and Android widget/activity tests.

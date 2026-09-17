@@ -28,6 +28,10 @@ public final class MainActivity extends Activity {
     private Button updateButton;
     private EditText updateUrlInput;
     private Updater.Info pendingUpdate;
+    private BarChartView weekChart;
+    private Button[] weekChips;
+    private TextView weekCaption;
+    private int weekMetric;   // 0 charges, 1 requests, 2 CPU; kept across re-renders
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -75,9 +79,13 @@ public final class MainActivity extends Activity {
                 String subsRaw=s.subscriptionsRaw();
                 if(!subsRaw.isEmpty()) { try { subs=Subscriptions.parse(subsRaw); } catch(Exception e) { subsParseFailed=true; } }
                 java.time.LocalDate today=java.time.LocalDate.now(java.time.ZoneOffset.UTC);
-                text(overview,s.demo()?"DEMO · SAMPLE DATA":"USAGE CHARGES",11,orange).setLetterSpacing(.1f);
-                text(overview,b.total(),38,ink).setTypeface(null,Typeface.BOLD);
+                text(overview,s.demo()?"DEMO · SAMPLE DATA":"USAGE CHARGES · THIS CYCLE",11,orange).setLetterSpacing(.1f);
+                text(overview,b.usageThisCycle(),38,ink).setTypeface(null,Typeface.BOLD);
                 text(overview,b.period(),13,muted);
+                if(b.multipleCycles()) {
+                    java.time.LocalDate e=b.earliestCycle();
+                    text(overview,"Running total"+(e==null?"":" since "+Billing.date(e))+": "+b.runningTotal(),12,muted);
+                }
                 Billing.WorkersMeter req=b.workersMeter(false), cpu=b.workersMeter(true);
                 renderMeter(overview,"Workers requests",req,Billing.REQUESTS_INCLUDED,"requests",s.paid(),b);
                 renderMeter(overview,"Workers CPU",cpu,Billing.CPU_MS_INCLUDED,"ms",s.paid(),b);
@@ -91,6 +99,7 @@ public final class MainActivity extends Activity {
                 if(!s.demo()) button(overview,"Refresh usage",this::refresh);
                 else if(s.configured()) button(overview,"Return to my account",()->{s.prefs.edit().putBoolean("demo",false).apply(); UsageWidget.updateAll(this); render();});
                 button(overview,"Add home-screen widget",this::pin);
+                if(!s.demo()) { try { buildWeek(); } catch(Exception ignored) { } }
                 LinearLayout upcoming=card();
                 text(upcoming,"UPCOMING CHARGES",11,orange).setLetterSpacing(.1f);
                 Billing.CostProjection cp=b.projectTotals();
@@ -177,6 +186,58 @@ public final class MainActivity extends Activity {
         text(page,"Long-press the widget to resize it. It adapts from a one-line strip to a full card.",12,muted);
         text(page,"Updates about every 3 hours, when Android allows. On GrapheneOS, allow Network access for this app. Tap the widget to see details.",12,muted);
         text(page,"Independent tool. Not affiliated with or endorsed by Cloudflare, Inc.",11,muted);
+    }
+    // ---- week view -----------------------------------------------------------
+    /** A seven-day bar chart of daily usage, with a Charges/Requests/CPU toggle. History is local-only. */
+    private void buildWeek() {
+        LinearLayout box=card();
+        text(box,"THIS WEEK",11,orange).setLetterSpacing(.12f);
+        text(box,"Daily usage",22,ink).setTypeface(null,Typeface.BOLD);
+        LinearLayout row=new LinearLayout(this); row.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2); rp.topMargin=dp(10); box.addView(row,rp);
+        String[] names={"Charges","Requests","CPU"};
+        weekChips=new Button[3];
+        for(int i=0;i<3;i++) {
+            final int idx=i;
+            Button chip=new Button(this); chip.setText(names[i]); chip.setAllCaps(false); chip.setTextSize(13);
+            chip.setMinHeight(dp(42)); chip.setMinWidth(0); chip.setPadding(dp(10),0,dp(10),0);
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,-2,1f); cp.rightMargin=(i<2)?dp(8):0;
+            chip.setOnClickListener(v->{ weekMetric=idx; refreshChart(); });
+            row.addView(chip,cp); weekChips[i]=chip;
+        }
+        weekChart=new BarChartView(this);
+        LinearLayout.LayoutParams chartP=new LinearLayout.LayoutParams(-1,dp(150)); chartP.topMargin=dp(14); box.addView(weekChart,chartP);
+        weekCaption=text(box,"",12,muted);
+        refreshChart();
+    }
+    private void refreshChart() {
+        if(weekChart==null) return;
+        History.Metric m=weekMetric==1?History.Metric.REQUESTS:weekMetric==2?History.Metric.CPU:History.Metric.CHARGES;
+        History.Week wk=History.week(History.read(this),m);
+        int n=wk.days.size();
+        String[] days=new String[n]; float[] frac=new float[n]; String[] vals=new String[n];
+        boolean[] absent=new boolean[n]; boolean[] base=new boolean[n];
+        double max=wk.max.doubleValue();
+        for(int i=0;i<n;i++) {
+            History.Day d=wk.days.get(i);
+            days[i]=Billing.date(d.date); absent[i]=d.absent; base[i]=d.baseline;
+            boolean plain=!d.absent && !d.baseline;
+            frac[i]=(plain && max>0)?(float)(d.value.doubleValue()/max):0f;
+            vals[i]=plain?formatValue(wk,d.value):"";
+        }
+        weekChart.set(days,frac,vals,absent,base);
+        for(int i=0;i<weekChips.length;i++) {
+            boolean sel=i==weekMetric;
+            weekChips[i].setBackground(background(sel?Color.rgb(48,65,54):Color.rgb(28,42,35),14));
+            weekChips[i].setTextColor(sel?ink:muted);
+        }
+        if(!wk.hasData) weekCaption.setText("Collecting your daily history. One bar appears per day of Cloudflare usage, starting now — check back tomorrow. Cloudflare reports usage a day or two behind.");
+        else if(weekMetric==0) weekCaption.setText("Each bar is one day's usage charge ("+wk.unit+"). Charges reset every billing cycle. Blank days had no snapshot; Cloudflare reports usage a day or two behind.");
+        else weekCaption.setText("Each bar is one day's Workers "+(weekMetric==1?"requests":"CPU time")+". Blank days had no snapshot; Cloudflare reports usage a day or two behind.");
+    }
+    private String formatValue(History.Week wk,java.math.BigDecimal v) {
+        if(wk.money) return Billing.money(v,wk.unit);
+        return Billing.compact(v)+(wk.unit.equals("ms")?" ms":"");
     }
     // ---- in-app updates ------------------------------------------------------
     private void buildUpdates() {
@@ -315,6 +376,7 @@ public final class MainActivity extends Activity {
                     String raw=Repository.fetch(id,secret);
                     s.save(id,secret,chosenPaid);
                     s.prefs.edit().putString("snapshot",raw).putLong("checked",System.currentTimeMillis()).remove("status").commit();
+                    History.record(this,raw);
                 } catch(Exception e) { error=e instanceof IllegalArgumentException?e.getMessage():"Could not connect. Check network access and try again."; }
             }
             String result=error;

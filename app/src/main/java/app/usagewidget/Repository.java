@@ -54,6 +54,7 @@ final class Repository {
             try {
                 String raw=fetch(s.account(),s.token());
                 s.prefs.edit().putString("snapshot",raw).putLong("checked",System.currentTimeMillis()).remove("error").remove("status").commit();
+                History.record(context,raw);
                 try {
                     String subs=fetchSubscriptions(s.account(),s.token());
                     s.prefs.edit().putString("subscriptions",subs).putLong("subs_checked",System.currentTimeMillis()).remove("subs_error").commit();

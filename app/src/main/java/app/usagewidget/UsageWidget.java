@@ -84,7 +84,7 @@ public final class UsageWidget extends AppWidgetProvider {
         }
         try {
             Billing b=Billing.parse(s.raw());
-            rv.setTextViewText(R.id.total,b.total());
+            rv.setTextViewText(R.id.total,b.usageThisCycle());
             Billing.WorkersMeter req=b.workersMeter(false);
             // At the 110dp STRIP width the total, the 32dp refresh target and a bar cannot coexist,
             // so req is bare text only (percent when paid, count otherwise) and the bar stays hidden.
@@ -136,7 +136,7 @@ public final class UsageWidget extends AppWidgetProvider {
         }
         try {
             Billing b=Billing.parse(s.raw());
-            rv.setTextViewText(R.id.total,b.total());
+            rv.setTextViewText(R.id.total,b.usageThisCycle());
             String meters=wideMeters(b.workersMeter(false),b.workersMeter(true),s.paid());
             if(s.demo()) {
                 // Demo always labeled (AGENTS.md). The "DEMO ·" prefix plus both meters is long, so the
@@ -227,11 +227,12 @@ public final class UsageWidget extends AppWidgetProvider {
         try {
             Billing b=Billing.parse(s.raw());
             boolean demo=s.demo(), paid=s.paid();
-            rv.setTextViewText(R.id.total,b.total());
+            rv.setTextViewText(R.id.total,b.usageThisCycle());
             if(!medium) {
                 rv.setTextViewText(R.id.title,demo?"CLOUDFLARE USAGE · DEMO":"CLOUDFLARE USAGE");
-                String subtitle=b.cycles.size()==1
-                    ? "Usage charges · since "+Billing.date(java.time.LocalDate.parse(b.cycles.first()))
+                java.time.LocalDate cur=b.currentCycleStart();
+                String subtitle=cur!=null
+                    ? "Usage charges · this cycle since "+Billing.date(cur)
                     : "Usage charges · "+b.period().toLowerCase(Locale.ROOT);
                 rv.setTextViewText(R.id.subtitle,subtitle);
             }
