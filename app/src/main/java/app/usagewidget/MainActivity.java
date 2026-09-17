@@ -32,6 +32,8 @@ public final class MainActivity extends Activity {
     private Button[] weekChips;
     private TextView weekCaption;
     private int weekMetric;   // 0 charges, 1 requests, 2 CPU; kept across re-renders
+    private TextView widgetAlphaLabel;
+    private Button[] accentSwatches;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -182,6 +184,7 @@ public final class MainActivity extends Activity {
                 .setMessage("Remove the saved token and usage snapshot from this device?")
                 .setNegativeButton("Cancel",null).setPositiveButton("Disconnect",(d,w)->disconnect()).show());
         }
+        buildWidgetAppearance();
         buildUpdates();
         text(page,"Long-press the widget to resize it. It adapts from a one-line strip to a full card.",12,muted);
         text(page,"Updates about every 3 hours, when Android allows. On GrapheneOS, allow Network access for this app. Tap the widget to see details.",12,muted);
@@ -238,6 +241,53 @@ public final class MainActivity extends Activity {
     private String formatValue(History.Week wk,java.math.BigDecimal v) {
         if(wk.money) return Billing.money(v,wk.unit);
         return Billing.compact(v)+(wk.unit.equals("ms")?" ms":"");
+    }
+    // ---- widget appearance ---------------------------------------------------
+    /** Global widget styling: a background-transparency slider and accent swatches. Applies to every widget. */
+    private void buildWidgetAppearance() {
+        Store s=new Store(this);
+        LinearLayout box=card();
+        text(box,"WIDGET APPEARANCE",11,orange).setLetterSpacing(.1f);
+        text(box,"Style the home-screen widget. Changes apply to every placed widget.",12,muted);
+        widgetAlphaLabel=text(box,"",13,ink);
+        updateAlphaLabel(s.widgetOpacity());
+        SeekBar seek=new SeekBar(this); seek.setMax(90); seek.setProgress(100-s.widgetOpacity());
+        seek.setProgressTintList(android.content.res.ColorStateList.valueOf(orange));
+        seek.setThumbTintList(android.content.res.ColorStateList.valueOf(orange));
+        box.addView(seek,new LinearLayout.LayoutParams(-1,-2));
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar sb,int p,boolean fromUser) {
+                int op=100-p; new Store(MainActivity.this).setWidgetOpacity(op); updateAlphaLabel(op);
+            }
+            public void onStartTrackingTouch(SeekBar sb) { }
+            public void onStopTrackingTouch(SeekBar sb) { UsageWidget.updateAll(MainActivity.this); }
+        });
+        text(box,"A more transparent widget blends into the wallpaper. Corners stay rounded on Android 12 and up.",12,muted);
+        text(box,"Accent",13,muted);
+        LinearLayout row=new LinearLayout(this); row.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2); rp.topMargin=dp(6); box.addView(row,rp);
+        accentSwatches=new Button[UsageWidget.ACCENTS.length];
+        for(int i=0;i<UsageWidget.ACCENTS.length;i++) {
+            final int idx=i;
+            Button sw=new Button(this); sw.setText(""); sw.setMinWidth(0); sw.setMinHeight(dp(44));
+            sw.setContentDescription(UsageWidget.ACCENT_NAMES[i]);
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(44),1f); cp.rightMargin=(i<UsageWidget.ACCENTS.length-1)?dp(8):0;
+            sw.setOnClickListener(v->{ new Store(MainActivity.this).setWidgetAccent(idx); styleSwatches(); UsageWidget.updateAll(MainActivity.this); });
+            row.addView(sw,cp); accentSwatches[i]=sw;
+        }
+        styleSwatches();
+    }
+    private void updateAlphaLabel(int opacity) {
+        if(widgetAlphaLabel!=null) widgetAlphaLabel.setText("Background transparency "+(100-opacity)+"% · widget "+opacity+"% opaque");
+    }
+    private void styleSwatches() {
+        if(accentSwatches==null) return;
+        int sel=new Store(this).widgetAccent();
+        for(int i=0;i<accentSwatches.length;i++) {
+            GradientDrawable g=background(UsageWidget.ACCENTS[i],12);
+            if(i==sel) g.setStroke(dp(3),ink);
+            accentSwatches[i].setBackground(g);
+        }
     }
     // ---- in-app updates ------------------------------------------------------
     private void buildUpdates() {

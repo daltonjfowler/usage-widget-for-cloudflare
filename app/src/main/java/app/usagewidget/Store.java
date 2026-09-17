@@ -30,6 +30,12 @@ final class Store {
     String subscriptionsRaw() { return demo() ? Subscriptions.demo() : prefs.getString("subscriptions",""); }
     String subsError()        { return prefs.getString("subs_error",""); }
     long   subsChecked()      { return prefs.getLong("subs_checked",0); }
+    /** Widget background opacity, 10..100 percent (never fully invisible). */
+    int  widgetOpacity()      { return Math.max(10,Math.min(100,prefs.getInt("widget_opacity",100))); }
+    void setWidgetOpacity(int v){ prefs.edit().putInt("widget_opacity",Math.max(10,Math.min(100,v))).apply(); }
+    /** Accent index into UsageWidget.ACCENTS; clamped so a stale index never crashes rendering. */
+    int  widgetAccent()       { int i=prefs.getInt("widget_accent",0); return (i<0||i>=UsageWidget.ACCENTS.length)?0:i; }
+    void setWidgetAccent(int i){ prefs.edit().putInt("widget_accent",i).apply(); }
     private SecretKey key() throws Exception {
         KeyStore ks=KeyStore.getInstance("AndroidKeyStore"); ks.load(null);
         if(ks.containsAlias(KEY)) return (SecretKey)ks.getKey(KEY,null);

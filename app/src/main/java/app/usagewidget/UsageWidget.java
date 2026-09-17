@@ -19,8 +19,12 @@ public final class UsageWidget extends AppWidgetProvider {
     private static final int[] FAM_ROW ={R.id.fam_row_0,R.id.fam_row_1,R.id.fam_row_2,R.id.fam_row_3,R.id.fam_row_4,R.id.fam_row_5,R.id.fam_row_6,R.id.fam_row_7};
     private static final int[] FAM_NAME={R.id.fam_name_0,R.id.fam_name_1,R.id.fam_name_2,R.id.fam_name_3,R.id.fam_name_4,R.id.fam_name_5,R.id.fam_name_6,R.id.fam_name_7};
     private static final int[] FAM_AMT ={R.id.fam_amt_0,R.id.fam_amt_1,R.id.fam_amt_2,R.id.fam_amt_3,R.id.fam_amt_4,R.id.fam_amt_5,R.id.fam_amt_6,R.id.fam_amt_7};
-    private static final int BAR_WARM=0xFFFFBA7A, BAR_HOT=0xFFFF7E6B;   // bar turns hot at 80% of the allowance
+    private static final int BAR_HOT=0xFFFF7E6B;                        // over-allowance warning; fixed regardless of accent
     private static final int AMOUNT=0xFFEFF5EE, AMOUNT_ZERO=0xFF7F8B85; // zero amounts recede
+    /** User-selectable accents (index 0 is the original amber). Applied to the title, refresh glyph and meter bars. */
+    static final int[] ACCENTS={0xFFFFBA7A,0xFF7FB6FF,0xFF8FE3A6,0xFFC69CFF,0xFFFF8C8C};
+    static final String[] ACCENT_NAMES={"Amber","Sky","Mint","Violet","Coral"};
+    private static final int BG_BASE=0x111B16;                          // solid fill used when the user dials in transparency
 
     enum Variant { STRIP, WIDE, MEDIUM, LARGE, TALL, XL }
 
@@ -63,7 +67,21 @@ public final class UsageWidget extends AppWidgetProvider {
         if(v==Variant.STRIP) buildStrip(c,rv);
         else if(v==Variant.WIDE) buildStripWide(c,rv);
         else buildCard(c,rv,v);
+        applyAppearance(c,rv,!strip);
         return rv;
+    }
+
+    /** Global widget style, applied after content: background opacity (10..100) and the chosen accent. */
+    private static void applyAppearance(Context c,RemoteViews rv,boolean card) {
+        Store s=new Store(c);
+        int op=s.widgetOpacity();
+        if(op<100) {
+            int a=Math.round(op/100f*255f);
+            rv.setInt(R.id.card,"setBackgroundColor",(a<<24)|BG_BASE);   // solid fill; the launcher rounds widget corners on 12+
+        }
+        int accent=ACCENTS[s.widgetAccent()];
+        rv.setTextColor(R.id.refresh,accent);
+        if(card) rv.setTextColor(R.id.title,accent);
     }
 
     private static void buildStrip(Context c,RemoteViews rv) {
@@ -236,10 +254,11 @@ public final class UsageWidget extends AppWidgetProvider {
                     : "Usage charges · "+b.period().toLowerCase(Locale.ROOT);
                 rv.setTextViewText(R.id.subtitle,subtitle);
             }
+            int accent=ACCENTS[s.widgetAccent()];
             Billing.WorkersMeter req=b.workersMeter(false);
             Billing.WorkersMeter cpu=b.workersMeter(true);
-            meterRow(rv,R.id.request_row,R.id.request_label,R.id.request_bar,R.id.request_value,"Requests",req,Billing.REQUESTS_INCLUDED,false,paid);
-            meterRow(rv,R.id.cpu_row,R.id.cpu_label,R.id.cpu_bar,R.id.cpu_value,"CPU",cpu,Billing.CPU_MS_INCLUDED,true,paid);
+            meterRow(rv,R.id.request_row,R.id.request_label,R.id.request_bar,R.id.request_value,"Requests",req,Billing.REQUESTS_INCLUDED,false,paid,accent);
+            meterRow(rv,R.id.cpu_row,R.id.cpu_label,R.id.cpu_bar,R.id.cpu_value,"CPU",cpu,Billing.CPU_MS_INCLUDED,true,paid,accent);
             if(!medium) {
                 if(v==Variant.LARGE && req==null) {
                     // The meter rows are hidden when unidentified; LARGE has no extra line, so the metrics view carries the note.
@@ -352,7 +371,7 @@ public final class UsageWidget extends AppWidgetProvider {
     private static boolean fitsOneLine(String s) { return s.length()<=34; }
 
     private static void meterRow(RemoteViews rv,int row,int label,int bar,int value,String name,
-                                 Billing.WorkersMeter m,BigDecimal included,boolean cpu,boolean paid) {
+                                 Billing.WorkersMeter m,BigDecimal included,boolean cpu,boolean paid,int warm) {
         if(m==null || m.consumed==null) { rv.setViewVisibility(row,View.GONE); return; }
         rv.setViewVisibility(row,View.VISIBLE);
         rv.setTextViewText(label,name);
@@ -362,7 +381,7 @@ public final class UsageWidget extends AppWidgetProvider {
             rv.setTextViewText(value,Billing.compact(m.consumed)+(cpu?" ms":"")+" · "+Billing.percentText(m.consumed,included));
             int p=progress(m.consumed,included);
             rv.setProgressBar(bar,1000,p,false);
-            rv.setColorStateList(bar,"setProgressTintList",ColorStateList.valueOf(p>=800?BAR_HOT:BAR_WARM));
+            rv.setColorStateList(bar,"setProgressTintList",ColorStateList.valueOf(p>=800?BAR_HOT:warm));
         } else {
             rv.setViewVisibility(bar,View.GONE);
             rv.setTextViewText(value,Billing.compact(m.consumed)+(cpu?" ms":""));

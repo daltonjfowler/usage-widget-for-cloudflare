@@ -53,6 +53,7 @@ What a Billing Read token can read: Cloudflare describes it as read access to th
 - API coverage and last successful fetch time. Background refresh approximately every three hours, subject to Android scheduling, plus manual refresh.
 - Last successful data stays visible on connection/API errors. Demo data is explicitly labeled.
 - The widget resizes from a one-line strip to a full card; the default is a compact one-row size.
+- Widget appearance is customizable in the app: a background-transparency slider (so the widget can blend into the wallpaper) and a choice of accent color for the title, refresh glyph and meter bars. Settings apply to every placed widget.
 - Upcoming charges: a projected current-cycle usage cost, listed account-scope subscription fees with renewal dates, and an estimated next-bill figure that is labeled an estimate and excludes tax, credits, and zone plans (zone plans need zone permissions and are not covered). The manual Workers Paid checkbox drives allowances only, while the subscription line and the estimate come from the /subscriptions API, so the two "$5" mentions do not double-count. The overview total covers all returned cycles, while the upcoming card is scoped to the current cycle.
 
 Widget sizes: the default is a compact 4x1 strip. Long-press the widget to resize it. Sizes range from a one-line strip, to a compact card, to a full card, to a tall card, up to an extra-large card. The tall and extra-large cards add an allowance-left line, a pace line, and a next-bill line; a full-height three-row home-screen cell receives the extra-large card.
@@ -107,6 +108,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\publish.ps1 -Notes
 - `UsageWidget.java`, `res/layout/widget.xml`: home-screen widget.
 - `MainActivity.java`: connection, demo, usage details, the weekly bar chart and widget pinning.
 - `History.java`, `BarChartView.java`: on-device daily usage samples and the seven-day chart that draws them.
+- `UsageWidget.applyAppearance`: applies the global widget transparency and accent preferences.
 - `RefreshJob.java`, `BootReceiver.java`: Android background scheduling and the daily update check.
 - `Updater.java`, `UpdateReceiver.java`, `Notifications.java`, `updates/`, `scripts/publish.ps1`: self-hosted in-app updates.
 - `app/src/test/`: billing regressions and Android widget/activity tests.
