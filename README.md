@@ -5,13 +5,20 @@ A small, free Android home-screen widget for Cloudflare account usage. Built for
 ## Screenshots
 
 <p>
-<img src="docs/device-pixel7.png" width="300" alt="The widget on a Pixel 7 at three rows: usage charges, request and CPU meters, family breakdown, allowance left, pace and next bill">
-<img src="docs/demo-xl-276x338.png" width="276" alt="Extra-large card rendered with labeled demo data">
+<img src="docs/device-widget.png" width="300" alt="The widget on a Pixel 7 home screen, translucent over the wallpaper: usage charges this cycle, Workers request and CPU meters, a per-service breakdown, allowance left, pace, and next bill">
 </p>
 
-Left: the widget on a Pixel 7 running GrapheneOS, sized to three rows. Right: the same extra-large card rendered by the test suite with demo data. Smaller sizes, all demo data:
+The widget on a Pixel 7 running GrapheneOS, with adjustable background transparency so it blends into the wallpaper. The app is split into a Usage tab and a Settings tab:
 
 <p>
+<img src="docs/app-usage.png" width="240" alt="Usage tab: charges this cycle, Workers request and CPU meters, a seven-day usage bar chart, upcoming charges, and a collapsible breakdown">
+<img src="docs/app-settings.png" width="240" alt="Settings tab: account, widget appearance with a background-transparency slider and accent colours, in-app updates, and about">
+</p>
+
+Widget sizes, all rendered with demo data:
+
+<p>
+<img src="docs/demo-xl-276x338.png" width="276" alt="Extra-large card rendered with labeled demo data"><br>
 <img src="docs/demo-strip-250x51.png" width="250" alt="One-line strip: total and request percent"><br>
 <img src="docs/demo-wide-250x51.png" width="250" alt="Wide strip: total, request and CPU percent"><br>
 <img src="docs/demo-medium-250x102.png" width="250" alt="Compact card: total, request and CPU meters, data date"><br>
